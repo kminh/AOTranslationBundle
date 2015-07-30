@@ -14,22 +14,22 @@ use Symfony\Component\DependencyInjection\Loader;
  */
 class AOTranslationExtension extends Extension
 {
+    protected $config;
+
+    protected $container;
+
     /**
      * {@inheritDoc}
      */
     public function load(array $configs, ContainerBuilder $container)
     {
         $configuration = new Configuration();
-        $config = $this->processConfiguration($configuration, $configs);
+        $this->config = $this->processConfiguration($configuration, $configs);
+        $this->container = $container;
 
-        $locales = array();
-
-        foreach ($config['locales'] as $locale => $options) {
-            $locales[$locale] = isset($options['label']) ? $options['label'] : $locale;
-        }
-
-        $container->setParameter('ao_translation.locales', $locales);
-        $container->setParameter('ao_translation.entity_manager', $config['entity_manager']);
+        $this->setupEntityManager();
+        $this->setupLocales();
+        $this->setupDomains();
 
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
@@ -37,5 +37,27 @@ class AOTranslationExtension extends Extension
         if (class_exists('Sonata\AdminBundle\Admin\Admin')) {
             $loader->load('adminServices.xml');
         }
+    }
+
+    protected function setupEntityManager()
+    {
+        $this->container->setParameter('ao_translation.entity_manager', $this->config['entity_manager']);
+    }
+
+    protected function setupLocales()
+    {
+        $locales = array();
+
+        foreach ($this->config['locales'] as $locale => $options) {
+            $locales[$locale] = isset($options['label']) ? $options['label'] : $locale;
+        }
+
+        $this->container->setParameter('ao_translation.locales', $locales);
+    }
+
+    protected function setupDomains()
+    {
+        $domains = $this->config['persistence']['domains'];
+        $this->container->setParameter('ao_translation.persistence.domains', $domains);
     }
 }

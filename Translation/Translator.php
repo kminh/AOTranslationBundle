@@ -8,9 +8,11 @@ use Symfony\Component\Translation\MessageSelector;
  */
 class Translator extends BaseTranslator
 {
-
     private $doctrineCatalogues = array();
+
     private $selector, $bundle, $controller, $action;
+
+    private $domains;
 
     /**
      * Store bundle, controller & action name
@@ -37,11 +39,50 @@ class Translator extends BaseTranslator
         }
     }
 
+    /**
+     * Check if a domain can be managed
+     *
+     * @param string $domain
+     * @return bool
+     */
+    private function isDomainManaged($domain)
+    {
+        $domains = $this->domains;
+
+        // no domains defined means all are allowed
+        if (is_null($domains) || count($domains) == 0) {
+            return true;
+        }
+
+        foreach ($domains as $domainPattern) {
+            if (preg_match('/' . $domainPattern . '/', $domain)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function setCommand($bundle, $controller, $action)
     {
         $this->bundle = $bundle;
         $this->controller = $controller;
         $this->action = $action;
+    }
+
+    /**
+     * Set a list of domains this service should handle
+     *
+     * Any unlisted domain will be ignored
+     *
+     * @param array $domains
+     * @author Khang Minh <kminhlabs@gmail.com>
+     *
+     * @since 1.0.5
+     */
+    public function setDomains(array $domains)
+    {
+        $this->domains = $domains;
     }
 
     /**
@@ -70,7 +111,7 @@ class Translator extends BaseTranslator
         }
 
         $message = $this->getMessage($id, $domain, $parameters, $locale);
-        if ($message->getContent()) {
+        if ($message && $message->getContent()) {
             // return entity translation
             return strtr($message->getContent(), $parameters);
         }
@@ -93,7 +134,7 @@ class Translator extends BaseTranslator
         }
 
         $message = $this->getMessage($id, $domain, $parameters, $locale);
-        if ($message->getContent()) {
+        if ($message && $message->getContent()) {
           // return entity translation
           return strtr($this->selector->choose($message->getContent(), (int) $number, $locale), $parameters);
         }
@@ -115,6 +156,10 @@ class Translator extends BaseTranslator
         // strip whitespaces to prevent duplicate index errors
         $id = trim($id);
         $domain = trim($domain);
+
+        if (!$this->isDomainManaged($domain)) {
+            return false;
+        }
 
         if (!isset($locale)) {
           $locale = $this->getLocale();

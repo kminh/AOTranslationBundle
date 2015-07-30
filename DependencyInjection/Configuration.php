@@ -23,12 +23,46 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->scalarNode('entity_manager')
-                ->defaultValue('default')
+                    ->defaultValue('default')
                 ->end()
                 ->arrayNode('locales')
                     ->prototype('array')
+                        ->children()
+                            ->scalarNode('label')->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->arrayNode('persistence')
+                    ->addDefaultsIfNotSet()
                     ->children()
-                        ->scalarNode('label')
+                        ->arrayNode('domains')
+                        ->info('A list of domain patterns to match')
+                            ->prototype('scalar')
+                            ->end()
+                            /* ->addDefaultsIfNotSet() */
+                            /* ->beforeNormalization() */
+                            /*     ->ifTrue(function($v) { */
+                            /*         return is_null($v) || (is_array($v) && !array_key_exists('blacklist', $v) && !array_key_exists('whitelist', $v)); */
+                            /*     }) */
+                            /*     ->then(function($v) { */
+                            /*         $domains = (array) $v; */
+
+                            /*         $v = []; */
+                            /*         $v['whitelist'] = $domains; */
+
+                            /*         return $v; */
+                            /*     }) */
+                            /* ->end() */
+                            /* ->children() */
+                            /*     ->arrayNode('blacklist') */
+                            /*         ->prototype('scalar') */
+                            /*         ->end() */
+                            /*     ->end() */
+                            /*     ->arrayNode('whitelist') */
+                            /*         ->prototype('scalar') */
+                            /*         ->end() */
+                            /*     ->end() */
+                            /* ->end() */
                         ->end()
                     ->end()
                 ->end()
